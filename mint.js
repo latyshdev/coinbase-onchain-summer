@@ -143,6 +143,31 @@ exports.mint = {
     ended: false 
   },
 
+  17: {
+    choice: 17,
+    name: `cbwallet.cb.id | cbwallet.cb.id`,
+    mint: `0x146B627a763DFaE78f6A409CEF5B8ad84dDD4150`,
+    value: `0.0001`,
+    ended: false 
+  },
+
+  18: {
+    choice: 18,
+    name: `Stand with Crypto Pizza`,
+    mint: `0x4beAdC00E2A6b6C4fAc1a43FF340E5D71CBB9F77`,
+    value: `0.0001`,
+    ended: false 
+  },
+
+  // N: {
+  //   choice: N,
+  //   name: ``,
+  //   mint: ``,
+  //   value: `0.0001`,
+  //   ended: false 
+  // },
+
+
   // BASE 
   mintFunctions: {
     ended: true,
@@ -164,6 +189,8 @@ exports.mint = {
     14: mintWithComment,
     15: mintWithComment,
     16: mintWithComment,
+    17: mintWithComment,
+    18: mintWithComment,
   }
 
 };
@@ -195,7 +222,7 @@ async function mintWithComment(BOT, choice) {
       );
 
       BOT.tx_params["BASE"].gasLimit = gasMultiplicate(gasAmount, BOT.configs["BASE"].GAS_AMOUNT_MULTIPLICATOR);
-      console.log(gasAmount, BOT.tx_params["BASE"].gasLimit);
+      // console.log(gasAmount, BOT.tx_params["BASE"].gasLimit);
       // return true;
 
       let tx = await contract["mintWithComment"](

@@ -154,8 +154,26 @@ const questions = [
     let length = unready.length;
     fs.appendFileSync(`./_LOGS/logs.txt`, `${"*".repeat(100)}\n${consoleTime()}\n${mint[choice].name} | Кошельков: ${length}\n${"*".repeat(100)}\n`);
 
+    
+    let mints = [];
+
+    if (choice === 0) {
+      logError(`Выбрали все минты`);
+      mints = Object.values(mint);
+      // console.log(mints);
+      mints = mints.filter(el => el.ended !== true && el.choice !== 0);
+      // console.log(mints);
+    } else {
+      mints = Object.values(mint);
+      // console.log(mints);
+      mints = mints.filter(el => el.choice === choice)
+    }
+
     for await (let [i, row] of unready.entries()) {
       // console.log(row);
+      console.log();
+      console.log();
+      console.log();
       console.log();
 
       // Удаляем кошелек из файла неготовых
@@ -191,36 +209,26 @@ const questions = [
         // Txn Type: 0 (Legacy) Rabby Wallet
         BOT.tx_params["BASE"].type = 0;
 
-        let msg = ``;
-
-        let mints = [];
-
-        if (choice === 0) {
-          logError(`Выбрали все минты`);
-          mints = Object.values(mint);
-          // console.log(mints);
-          mints = mints.filter(el => el.ended !== true && el.choice !== 0);
-          // console.log(mints);
-        } else {
-          mints = Object.values(mint);
-          // console.log(mints);
-          mints = mints.filter(el => el.choice === choice)
-        }
 
         // console.log("mints", mints, choice, typeof(choice))
-        mints = shuffle(mints);
+        // mints = shuffle(mints);
 
-        let maxMints = randomBetweenInt(CONFIG.MAX_MINTS[0],CONFIG.MAX_MINTS[1]);
-        logInfo(`Делаем минтов:`, maxMints);
+        let maxMints = randomBetweenInt(CONFIG.MAX_MINTS[0], CONFIG.MAX_MINTS[1]);
+        logInfo(`Делаем минтов: ${maxMints}`);
 
         let k = 0;
-        for await (let currentMint of mints) {
+        for await (let currentMint of shuffle(mints)) {
           // console.log(currentMint);
           // continue;
           k++;
-          if ( k > maxMints) continue;
-
-          let standardMsg = `Кошелек [${BOT.wallets["BASE"].address} | ${id}] [${parseInt(k) + 1} из ${maxMints}] | [${parseInt(i) + 1} из ${length}]`;
+          // console.log(k, k > maxMints, maxMints)
+          if ( k > maxMints) {
+            // logWarn(`скип`)
+            // console.log(k, k > maxMints, maxMints)
+            continue;
+          }
+          let msg = ``;
+          let standardMsg = `Кошелек [${BOT.wallets["BASE"].address} | ${id}] [${k} из ${maxMints}] | [${parseInt(i) + 1} из ${length}]`;
           standardMsg += ` | ${currentMint.name} `;
 
           choice = currentMint.choice;
@@ -229,29 +237,30 @@ const questions = [
 
           if (tx === true) {
             logSuccess(standardMsg + `| Минт уже был совершен.`);
-            msg = consoleTime() + " | " + standardMsg + `| Минт уже был совершен.\n`;
+            // msg = consoleTime() + " | " + standardMsg + `| Минт уже был совершен.\n`;
           }
           else {
 
             if (tx === false) {
               logError(standardMsg + `| Не смогли заминтить`);
-              msg += consoleTime() + " | " + standardMsg + `| Не смогли заминтить\n`
+              msg = consoleTime() + " | " + standardMsg + `| Не смогли заминтить\n`
             } else {
               logWarn(standardMsg + `| ${tx.hash}`);
               // msg = consoleTime() + " | " + standardMsg + `| Транзакция в очереди | ${tx.hash}\n`;
               await tx.wait();
               logSuccess(standardMsg + `| ${tx.hash}`);
-              msg += consoleTime() + " | " + standardMsg + `| Транзакция готова | ${CONFIG.EXPLORER}/tx/${tx.hash}\n`;
+              msg = consoleTime() + " | " + standardMsg + `| Транзакция готова | ${CONFIG.EXPLORER}/tx/${tx.hash}\n`;
             }
 
           }
 
           // Записываем логи и обновляем файлы
           fs.appendFileSync(`./_LOGS/logs.txt`, msg, `utf-8`);
-          fs.appendFileSync(`./_CONFIGS/ready.txt`, row + "\n", `utf-8`);
-                // Если минт был совершен ранее, то пропускаем паузу
-                if (tx === true) continue;
-                if (tx === false) continue;
+          // fs.appendFileSync(`./_CONFIGS/ready.txt`, row + "\n", `utf-8`);
+
+          // Если минт был совершен ранее, то пропускаем паузу
+          // if (tx === true) continue;
+          // if (tx === false) continue;
 
           // Пауза между транзакциями
           let pauseSeconds = randomBetweenInt(
@@ -260,17 +269,15 @@ const questions = [
           );
 
           let pauseSecondsMs = pauseSeconds * SECOND;
-          logInfo(standardMsg + ` | Пауза ${pauseSecondsMs / SECOND} секунд`);
-
+          logInfo(standardMsg + ` | Пауза между транзами ${pauseSecondsMs / SECOND} секунд`);
+          console.log(k, k > maxMints, maxMints);
           // Пауза между транзакциями
           await pause(pauseSecondsMs);
         }
-
-
        
         // Если последний кошелек, то ждать не нужно
         // console.log(i, i+1, i+1 === unready.length, unready.length);
-        if (i+1 === length) continue;
+        // if (i+1 === length) continue;
 
         // Пауза между кошельками
         let pauseSeconds = randomBetweenInt(
@@ -278,14 +285,16 @@ const questions = [
           CONFIG.PAUSE_BETWEEN_ACCOUNTS[1]
         );
         let pauseSecondsMs = pauseSeconds * SECOND;
-        logInfo(standardMsg + ` | Пауза ${pauseSecondsMs / SECOND} секунд`);
+        logInfo(` | Пауза ${pauseSecondsMs / SECOND} секунд между акками`);
 
         // Пауза между кошельками
         await pause(pauseSecondsMs);
+
         
       } catch (err) {
         // fs.appendFileSync(`./_LOGS/logs.txt`, msg, `utf-8`);
         // fs.appendFileSync(`./_CONFIGS/fail.txt`, row + "\n", `utf-8`);
+        logError(err.message);
         console.error(err);
       }
 
