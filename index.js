@@ -220,6 +220,7 @@ const questions = [
         for await (let currentMint of shuffle(mints)) {
           // console.log(currentMint);
           // continue;
+          await pause(2 * SECOND);
           k++;
           // console.log(k, k > maxMints, maxMints)
           if ( k > maxMints) {
@@ -259,8 +260,8 @@ const questions = [
           // fs.appendFileSync(`./_CONFIGS/ready.txt`, row + "\n", `utf-8`);
 
           // Если минт был совершен ранее, то пропускаем паузу
-          // if (tx === true) continue;
-          // if (tx === false) continue;
+          if (tx === true) continue;
+          if (tx === false) continue;
 
           // Пауза между транзакциями
           let pauseSeconds = randomBetweenInt(
